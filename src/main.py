@@ -1,7 +1,10 @@
 from fastapi import FastAPI
+from src.api.routes import router as api_router
 
-app = FastAPI()
+app = FastAPI(title="Pulso - Assistente de IA")
+
+app.include_router(api_router, prefix="/api")
 
 @app.get("/")
-def read_root():
-    return {"status": "pulso online"}
+def health_check():
+    return {"status": "Pulso online"}
