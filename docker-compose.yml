@@ -1,12 +1,43 @@
+version: '3.8'
+
 services:
-  api:
-    build: .
-    container_name: pulso_api
-    command: uvicorn src.main:app --host 0.0.0.0 --port 8000
+  db:
+    image: postgres:15-alpine
+    container_name: pulso_db
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      # O Docker pega os valores do arquivo .env automaticamente
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     ports:
-      - "8000:8000"
-    env_file:
-      - .env
+      - "5432:5432"
+    networks:
+      - pulso_network
+
+  backend:
+    container_name: pulso_api
+    build:
+      context: .
+      dockerfile: Dockerfile
     volumes:
       - .:/app
-    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      # Aqui passamos a string de conexão completa para o Python
+      - DATABASE_URL=${DATABASE_URL}
+      - PULSO_API_KEY=${PULSO_API_KEY}
+    depends_on:
+      - db
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - pulso_network
+
+volumes:
+  postgres_data:
+
+networks:
+  pulso_network:
